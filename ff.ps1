@@ -9,7 +9,7 @@ param(
   [Parameter()][Int][ValidateRange(0, 100)]$quality = 80, # [WEBP & WEBP Animated & WEBM]
   [Parameter()][Int][ValidateRange(0, 48000)]$samplerate = 48000, # [MP3]
   [Parameter()][Int][ValidateRange(0, 6)]$compression = 6, # [WEBP & WEBP Animated]
-  [Parameter()][Int][ValidateRange(1, 2)]$giType = 1, # [GI]
+  [Parameter()][Int][ValidateRange(0, 3)]$giType = 1, # [GI]
   [Parameter()][Int][ValidateRange(1, 60)]$fps = 24, # [WEBP Animated & WEBM]
   [Parameter()][Int][ValidateRange(1, 320)]$bitrate = 320, # [MP3]
   [Parameter()][String][ValidateSet("default", "drawing", "icon", "none", "photo", "picture", "text")]$preset = "picture", # [WEBP & WEBP Animated]
@@ -63,26 +63,65 @@ If (-Not (Test-Path -Path "${pwd}\output" -PathType Container)) { [Void](New-Ite
 
 # Process files with FFmpeg
 For ($i = 0; $i -lt $targetCount; $i++) {
-  $file = $targetList[$i]; $filename = $file.BaseName; $ffmpegOption = @()
+  $file = $targetList[$i]; $filename = $file.BaseName; $ffmpegOption = @(); $currentCount = $i + 1
   # Print progress bar
-  $processStatus = ($i / $targetCount) * 100
-  Write-Progress -Activity "Converting files..." -Status "Processing ${file}..." -PercentComplete $processStatus
+  $processStatus = ($currentCount / $targetCount) * 100
+  Write-Progress -Activity "Converting files... (${currentCount}/${targetCount})" -Status "Processing ${file}..." -PercentComplete $processStatus
   # Build FFmpeg option
   switch ($subcmd) {
     "gi" {
       # Genshin Impact screenshot
-      If ($giType -eq 1) { $giHeight = 240 }
-      ElseIf ($giType -eq 2) { $giHeight = 400 }
-      $ffmpegOption = @(
-        "-i `"${file}`"",
-        "-vf `"crop=iw:${giHeight}:0:ih-${giHeight},scale=${width}:${height}`"",
-        "-quality ${quality}",
-        "-compression_level ${compression}",
-        "-preset ${preset}",
-        "-y"
-      )
-      If ($lossless) { $ffmpegOption += "-lossless" }
-      $ffmpegOption += "`"output\${filename}`.webp`""
+      switch ($giType) {
+        0 {
+          # Just convert to 1280 width
+          $ffmpegOption = @(
+            "-i `"${file}`"",
+            "-vf `"scale=${width}:${height}`"",
+            "-quality ${quality}",
+            "-compression_level ${compression}",
+            "-preset ${preset}",
+            "-y"
+          )
+          If ($lossless) { $ffmpegOption += "-lossless" }; $ffmpegOption += "`"output\${filename}`.webp`""
+        }
+        1 {
+          $giHeight = 240
+          $ffmpegOption = @(
+            "-i `"${file}`"",
+            "-vf `"crop=iw:${giHeight}:0:ih-${giHeight},scale=${width}:${height}`"",
+            "-quality ${quality}",
+            "-compression_level ${compression}",
+            "-preset ${preset}",
+            "-y"
+          )
+          If ($lossless) { $ffmpegOption += "-lossless" }; $ffmpegOption += "`"output\${filename}`.webp`""
+        }
+        2 {
+          $giHeight = 270
+          $ffmpegOption = @(
+            "-i `"${file}`"",
+            "-vf `"crop=iw:${giHeight}:0:ih-${giHeight},scale=${width}:${height}`"",
+            "-quality ${quality}",
+            "-compression_level ${compression}",
+            "-preset ${preset}",
+            "-y"
+          )
+          If ($lossless) { $ffmpegOption += "-lossless" }; $ffmpegOption += "`"output\${filename}`.webp`""
+        }
+        3 {
+          $giHeight = 400
+          $ffmpegOption = @(
+            "-i `"${file}`"",
+            "-vf `"crop=iw:${giHeight}:0:ih-${giHeight},scale=${width}:${height}`"",
+            "-quality ${quality}",
+            "-compression_level ${compression}",
+            "-preset ${preset}",
+            "-y"
+          )
+          If ($lossless) { $ffmpegOption += "-lossless" }; $ffmpegOption += "`"output\${filename}`.webp`""
+        }
+        default { Write-Host "Unknown giType!"; Return }
+      }
       # Run FFmpeg
       Start-FFmpeg -option $ffmpegOption
     }
@@ -119,7 +158,7 @@ For ($i = 0; $i -lt $targetCount; $i++) {
           "-y",
           "nul"
         )
-        Write-Progress -Activity "Converting files..." -Status "Processing ${file}... [Pass 1]" -PercentComplete $processStatus
+        Write-Progress -Activity "Converting files... (${currentCount}/${targetCount})" -Status "Processing ${file}... [Pass 1]" -PercentComplete $processStatus
         Start-FFmpeg -option $ffmpegOption1
         $ffmpegOption2 = $ffmpegOption + @(
           "-c:a libopus",
@@ -128,7 +167,7 @@ For ($i = 0; $i -lt $targetCount; $i++) {
           "-y",
           "`"output\${filename}`.webm`""
         )
-        Write-Progress -Activity "Converting files..." -Status "Processing ${file}... [Pass 2]" -PercentComplete $processStatus
+        Write-Progress -Activity "Converting files... (${currentCount}/${targetCount})" -Status "Processing ${file}... [Pass 2]" -PercentComplete $processStatus
         Start-FFmpeg -option $ffmpegOption2
       } Else {
         # WebM with 1-pass
@@ -149,8 +188,7 @@ For ($i = 0; $i -lt $targetCount; $i++) {
         "-preset ${preset}",
         "-y"
       )
-      If ($lossless) { $ffmpegOption += "-lossless" }
-      $ffmpegOption += "`"output\${filename}`.webp`""
+      If ($lossless) { $ffmpegOption += "-lossless" }; $ffmpegOption += "`"output\${filename}`.webp`""
       # Run FFmpeg
       Start-FFmpeg -option $ffmpegOption
     }
@@ -167,9 +205,7 @@ For ($i = 0; $i -lt $targetCount; $i++) {
         "-vsync 0",
         "-y"
       )
-      If ($lossless) { $ffmpegOption += "-lossless" }
-      If ($loop) { $ffmpegOption += "-loop 0" }
-      $ffmpegOption += "`"output\${filename}`.webp`""
+      If ($lossless) { $ffmpegOption += "-lossless" }; If ($loop) { $ffmpegOption += "-loop 0" }; $ffmpegOption += "`"output\${filename}`.webp`""
     }
   }
 }
