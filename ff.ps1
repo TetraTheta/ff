@@ -15,15 +15,17 @@ param(
   [Parameter()][String][ValidateSet("default", "drawing", "icon", "none", "photo", "picture", "text")]$preset = "picture", # [WEBP & WEBP Animated]
   [Parameter()][Switch]$lossless = $false, # [WEBP & WEBP Animated]
   [Parameter(Position = 0, Mandatory = $true)][String][ValidateSet("gi", "mp3", "webm", "webp", "webpa")]$subcmd = "",
-  [Parameter(Position = 1)][String]$target = $pwd
+  [Parameter(Position = 1)][String]$target = $cwd
 )
+$ffmpegPath = "C:\CustomExecutables\ffmpeg.exe"
 $audioExtension = @(".aac", ".flac", ".mp3", ".oga", ".ogg", ".opus", ".vorbis", ".wav", ".wma")
 $imageExtension = @(".bmp", ".gif", ".jpeg", ".jpg", ".png", ".webp")
 $videoExtension = @(".avi", ".mkv", ".mp4", ".mov", ".wmv", ".webm", ".ogv", ".opus")
 
 function Start-FFmpeg() {
   param([String[]]$option)
-  Start-Process -FilePath "ffmpeg.exe" -WorkingDirectory $pwd -ArgumentList $option -WindowStyle Hidden -Wait
+  # Due to the PowerShell bug, I can't pass directory with '[]' to '-WorkingDirectory'. This makes this whole script useless.
+  Start-Process -FilePath "$ffmpegPath" -WorkingDirectory ($target | Out-String) -ArgumentList $option -WindowStyle Hidden -Wait
 }
 
 $targetList = @()
@@ -45,6 +47,8 @@ Else { Write-Host "Cannot determine type of the input!"; Return }
 
 # Filter targetList
 $DebugPreference = "SilentlyContinue"
+#Write-Host $target | Out-String
+#Write-Host $targetList | Out-String
 switch ($subcmd) {
   "gi" { $targetList = $targetList | Where-Object {$_.Extension -eq ".png"} }
   "mp3" { $targetList = $targetList | Where-Object {$_.Extension -in $audioExtension} }
@@ -53,13 +57,14 @@ switch ($subcmd) {
   "webpa" { $targetList = $targetList | Where-Object {$_.Extension -in $videoExtension} }
   default { Write-Host "Wrong subcommand!"; Return }
 }
+#Write-Host $targetList
 $targetCount = ($targetList | Measure-Object).Count
 
 # Exit script if there is no file to process
 If ($targetCount -eq 0) { Write-Host "There is no file to process with this subcommand: ${subcmd}"; Return }
 
 # Create directory where processed files to be saved
-If (-Not (Test-Path -Path "${pwd}\output" -PathType Container)) { [Void](New-Item "${pwd}\output" -ItemType Directory -ErrorAction Stop) }
+If (-Not (Test-Path -LiteralPath "${target}\output" -PathType Container)) { [Void](New-Item -Path "${target}\output" -ItemType Directory -ErrorAction Stop) }
 
 # Process files with FFmpeg
 For ($i = 0; $i -lt $targetCount; $i++) {
@@ -97,7 +102,7 @@ For ($i = 0; $i -lt $targetCount; $i++) {
           If ($lossless) { $ffmpegOption += "-lossless" }; $ffmpegOption += "`"output\${filename}`.webp`""
         }
         2 {
-          $giHeight = 270
+          $giHeight = 300
           $ffmpegOption = @(
             "-i `"${file}`"",
             "-vf `"crop=iw:${giHeight}:0:ih-${giHeight},scale=${width}:${height}`"",
@@ -210,4 +215,4 @@ For ($i = 0; $i -lt $targetCount; $i++) {
   }
 }
 Write-Host "Done"
-Return
+Exit
