@@ -2,47 +2,46 @@ import argparse
 import subprocess
 import sys
 from os import getcwd
-from typing import List, Tuple, Final
+from typing import List, Tuple
 from pathlib import Path
-
 
 subprocess.run("color", shell=True, capture_output=False, check=False)  # Hack: Enable ANSI/VT100 on Command Prompt
 
-FFMPEG_PATH: Final[str] = "C:\\CustomExecutables\\ffmpeg.exe"
+FFMPEG_PATH = "C:\\CustomExecutables\\ffmpeg.exe"
 
-AUDIO_EXTENSIONS: Tuple[str, ...] = ("*.aac", "*.flac", "*.mp3", "*.oga", "*.ogg", "*.opus", "*.vorbis", "*.wav", "*.wma")
-IMAGE_EXTENSIONS: Tuple[str, ...] = ("*.bmp", "*.gif", "*.jpeg", "*.jpg", "*.png", "*.webp")
-VIDEO_EXTENSIONS: Tuple[str, ...] = ("*.avi", "*.mkv", "*.mp4", "*.mov", "*.wmv", "*.webm", "*.ogv", "*.opus")
-SUBCMD_LIST: Tuple[str, ...] = ("gi", "mp3", "webm", "webp", "webpa")
-WEBP_PRESETS: Tuple[str, ...] = ("default", "drawing", "icon", "none", "photo", "picture", "text")
+AUDIO_EXTENSIONS = ("*.aac", "*.flac", "*.mp3", "*.oga", "*.ogg", "*.opus", "*.vorbis", "*.wav", "*.wma")
+IMAGE_EXTENSIONS = ("*.bmp", "*.gif", "*.jpeg", "*.jpg", "*.png", "*.webp")
+VIDEO_EXTENSIONS = ("*.avi", "*.mkv", "*.mp4", "*.mov", "*.wmv", "*.webm", "*.ogv", "*.opus")
+SUBCMD_LIST = ("gi", "mp3", "webm", "webp", "webpa")
+WEBP_PRESETS = ("default", "drawing", "icon", "none", "photo", "picture", "text")
 
 # Description & Help text because I'm lazy
-DESC_FF: Final[str] = "A collection of FFmpeg commands in a single script\nuse '--help' with each subcommand for its usage."
-DESC_GI: Final[str] = "Genshin Impact screenshot processor\nTruncate the image and convert it to a WebP image with a width of 1280px."
-DESC_MP3: Final[str] = "Convert audio/video files to MP3 audio format"
-DESC_WEBM: Final[str] = "Convert video files to WebM video format"
-DESC_WEBP: Final[str] = "Convert image files to WebP image format"
-DESC_WEBPA: Final[str] = "Convert video files to WebP Animated image format"
-HELP_GI_TYPE: Final[str] = "Type of screenshot truncation. Truncation is done before image resizing.\n0 = Do not truncate\n1 = Prune 240px from the bottom\n2 = Prune 300px from the bottom\n3 = Prune 400px from the bottom\nDefault: '%(default)s'"
-HELP_MP3_BITRATE: Final[str] = "Bitrate of the output MP3 audio.\nDefault: '%(default)s' (kbps)"
-HELP_MP3_SAMPLE: Final[str] = "Samplerate of the output MP3 audio.\nDefault: '%(default)s'"
-HELP_TARGET: Final[str] = "File or directory to process.\nDefault '%(default)s' (Current directory)"
-HELP_WEBM_1_PASS: Final[str] = "Convert with 1-pass conversion"
-HELP_WEBM_2_PASS: Final[str] = "Convert with 2-pass conversion"
-HELP_WEBM_FPS: Final[str] = "FPS of the output WebM video.\nIf omitted, it will follow the source video's FPS."
-HELP_WEBM_HEIGHT: Final[str] = "Height of the output WebM video.\nDefault: '%(default)s' (Keep original ratio)"
-HELP_WEBM_QUALITY: Final[str] = "Quality of the WebM video.\n15 = Best (for 2160p)\n37 = Worst (for 240p)\nDefault: '%(default)s'"
-HELP_WEBM_WIDTH: Final[str] = "Width of the output WebM video.\nDefault: '%(default)s' (px)"
-HELP_WEBP_COMPRESSION: Final[str] = "Compression level of the output WebP image.\nDefault: '%(default)s' (Max compression level)"
-HELP_WEBP_HEIGHT: Final[str] = "Height of the output WebP image.\nDefault: '%(default)s' (Keep original ratio)"
-HELP_WEBP_LOSSLESS: Final[str] = "Convert to a lossless WebP image.\nCannot be used with '--lossy'"
-HELP_WEBP_LOSSY: Final[str] = "Convert to a lossy WebP image.\nCannot be used with '--lossless'"
-HELP_WEBP_PRESET: Final[str] = "Preset of WebP.\nDefault: '%(default)s'"
-HELP_WEBP_QUALITY: Final[str] = "Quality of the WebP image.\nDefault: '%(default)s'"
-HELP_WEBP_WIDTH: Final[str] = "Width of the output WebP image.\nDefault: '%(default)s'px (Original width)"
-HELP_WEBPA_FPS: Final[str] = "FPS of the output WebP image.\nDefault: '%(default)s'"
-HELP_WEBPA_LOOP: Final[str] = "Loop the output WebP image."
-HELP_WEBPA_NO_LOOP: Final[str] = "Do not loop the output WebP image."
+DESC_FF = "A collection of FFmpeg commands in a single script\nuse '--help' with each subcommand for its usage."
+DESC_GI = "Genshin Impact screenshot processor\nTruncate the image and convert it to a WebP image with a width of 1280px."
+DESC_MP3 = "Convert audio/video files to MP3 audio format"
+DESC_WEBM = "Convert video files to WebM video format"
+DESC_WEBP = "Convert image files to WebP image format"
+DESC_WEBPA = "Convert video files to WebP Animated image format"
+HELP_GI_TYPE = "Type of screenshot truncation. Truncation is done before image resizing.\n0 = Do not truncate\n1 = Prune 240px from the bottom\n2 = Prune 300px from the bottom\n3 = Prune 400px from the bottom\nDefault: '%(default)s'"
+HELP_MP3_BITRATE = "Bitrate of the output MP3 audio.\nDefault: '%(default)s' (kbps)"
+HELP_MP3_SAMPLE = "Samplerate of the output MP3 audio.\nDefault: '%(default)s'"
+HELP_TARGET = "File or directory to process.\nDefault '%(default)s' (Current directory)"
+HELP_WEBM_1_PASS = "Convert with 1-pass conversion"
+HELP_WEBM_2_PASS = "Convert with 2-pass conversion"
+HELP_WEBM_FPS = "FPS of the output WebM video.\nIf omitted, it will follow the source video's FPS."
+HELP_WEBM_HEIGHT = "Height of the output WebM video.\nDefault: '%(default)s' (Keep original ratio)"
+HELP_WEBM_QUALITY = "Quality of the WebM video.\n15 = Best (for 2160p)\n37 = Worst (for 240p)\nDefault: '%(default)s'"
+HELP_WEBM_WIDTH = "Width of the output WebM video.\nDefault: '%(default)s' (px)"
+HELP_WEBP_COMPRESSION = "Compression level of the output WebP image.\nDefault: '%(default)s' (Max compression level)"
+HELP_WEBP_HEIGHT = "Height of the output WebP image.\nDefault: '%(default)s' (Keep original ratio)"
+HELP_WEBP_LOSSLESS = "Convert to a lossless WebP image.\nCannot be used with '--lossy'"
+HELP_WEBP_LOSSY = "Convert to a lossy WebP image.\nCannot be used with '--lossless'"
+HELP_WEBP_PRESET = "Preset of WebP.\nDefault: '%(default)s'"
+HELP_WEBP_QUALITY = "Quality of the WebP image.\nDefault: '%(default)s'"
+HELP_WEBP_WIDTH = "Width of the output WebP image.\nDefault: '%(default)s'px (Original width)"
+HELP_WEBPA_FPS = "FPS of the output WebP image.\nDefault: '%(default)s'"
+HELP_WEBPA_LOOP = "Loop the output WebP image."
+HELP_WEBPA_NO_LOOP = "Do not loop the output WebP image."
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description=DESC_FF)
 subparser = parser.add_subparsers(dest="subcmd")
@@ -97,7 +96,25 @@ parser_webpa.add_argument("target", metavar="<filename|directory>", help=HELP_TA
 
 
 # Method
-def get_file_list(subcmd: str, target: Path):
+def create_output_dir(target: Path, output_name: str) -> Path:
+    output_parent = Path()
+    if target.is_file():
+        # target is file
+        output_parent = target.resolve().parent
+    elif target.is_dir():
+        # target is directory
+        output_parent = target
+    else:
+        # I don't want to do this, but IDE will nag about this
+        print(f"Unknown file/directory type: {str(target)}")
+        sys.exit(1)
+
+    output_directory = output_parent / output_name
+    output_directory.mkdir(exist_ok=True)
+    return output_dir
+
+
+def get_file_list(subcmd: str, target: Path) -> Tuple:
     file_list = []
     if target.is_dir():
         # target is directory
@@ -122,6 +139,28 @@ def get_file_list(subcmd: str, target: Path):
     return return_tuple
 
 
+def get_output_dir_name(argument: argparse.Namespace) -> str:
+    suffix = ""
+    if argument.subcmd == "gi":
+        if argument.giType == 0:
+            suffix = "_gi"
+        elif argument.giType == 1:
+            suffix = "_gi_1"
+        elif argument.giType == 2:
+            suffix = "_gi_2"
+        elif argument.giType == 3:
+            suffix = "_gi_3"
+    elif argument.subcmd == "mp3":
+        suffix = "_mp3"
+    elif argument.subcmd == "webm":
+        suffix = "_webm"
+    elif argument.subcmd == "webp":
+        suffix = "_webp"
+    elif argument.subcmd == "webpa":
+        suffix = "_webpa"
+    return "output" + suffix
+
+
 def progressbar(now: int, total: int, prefix: str = "", size: int = 80, out=sys.stdout):
     x = int(size * now / total)
     print(prefix)
@@ -135,8 +174,10 @@ def progressbar(now: int, total: int, prefix: str = "", size: int = 80, out=sys.
 
 def start_ffmpeg(args_list: List[str]):
     execution = [FFMPEG_PATH] + args_list
-    # subprocess.run(execution, check=False)
     subprocess.run(execution, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+#######################################################################################################################
+# Start of the script
 
 
 # Parse arguments
@@ -156,53 +197,32 @@ if not (target_path.is_dir() or target_path.is_file()):
 # Below this line, no need to check validity of 'target_path'
 
 # Get file list from target
-TARGET_LIST = get_file_list(args.subcmd, target_path)
+target_list: Tuple[str, ...] = get_file_list(args.subcmd, target_path)  # this is tuple!
 
 # Exit script if there is no files to process
-if len(TARGET_LIST) < 1:
+if len(target_list) < 1:
     print(f"There is no file to process for this subcommand: {args.subcmd}")
     sys.exit(0)
 
 # Generate output directory name
-OUTPUT_DIR_SUFFIX = ""
-if args.subcmd == "gi":
-    if args.giType == 0:
-        OUTPUT_DIR_SUFFIX = "_gi"
-    elif args.giType == 1:
-        OUTPUT_DIR_SUFFIX = "_gi_1"
-    elif args.giType == 2:
-        OUTPUT_DIR_SUFFIX = "_gi_2"
-    elif args.giType == 3:
-        OUTPUT_DIR_SUFFIX = "_gi_3"
-elif args.subcmd == "mp3":
-    OUTPUT_DIR_SUFFIX = "_mp3"
-elif args.subcmd == "webm":
-    OUTPUT_DIR_SUFFIX = "_webm"
-elif args.subcmd == "webp":
-    OUTPUT_DIR_SUFFIX = "_webp"
-elif args.subcmd == "webpa":
-    OUTPUT_DIR_SUFFIX = "_webpa"
-OUTPUT = "output" + OUTPUT_DIR_SUFFIX
+output_dirname: str = get_output_dir_name(args)
 
 # Create output directory
-target_dir = Path()
-if target_path.is_file():
-    target_dir = target_path.resolve().parent
-elif target_path.is_dir():
-    target_dir = target_path
-output_dir = target_dir / OUTPUT
-output_dir.mkdir(exist_ok=True)
+output_dir: Path = create_output_dir(target_path, output_dirname)
 
 # Generate FFmpeg arguments and run FFmpeg
-for index, item in enumerate(TARGET_LIST):
-    FILENAME: str = Path(item).stem
-    COUNT = index + 1
-    OUTPUT_FULL = str(output_dir)
-    # Print progress bar
-    progressbar(COUNT, len(TARGET_LIST), f"Processing {item} ...")
+for index, item in enumerate(target_list):
+    # For FFmpeg and Progress bar
+    count = index + 1
+    item_name_only: str = Path(item).stem
+    output_dir_str: str = str(output_dir)
+    # For beautifying Progress bar
+    item_fullname: str = Path(item).name
+    # Empty variables because IDE nags about them
+    ffmpeg_args: List[str, ...] = []
     if args.subcmd == "gi":
         if args.giType == 0:
-            FFMPEG_ARGS = [
+            ffmpeg_args = [
                 "-i", f"{item}",
                 "-vf", f"scale={args.width}:{args.height}",
                 "-quality", f"{args.quality}",
@@ -211,11 +231,11 @@ for index, item in enumerate(TARGET_LIST):
                 "-y"
             ]
             if args.lossless:
-                FFMPEG_ARGS.extend(["-lossless", "1"])
-            FFMPEG_ARGS.extend(["-f", "webp", f"{OUTPUT_FULL}\\{FILENAME}.webp"])
+                ffmpeg_args.extend(["-lossless", "1"])
+            ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
         elif args.giType == 1:
             GI_HEIGHT = 240
-            FFMPEG_ARGS = [
+            ffmpeg_args = [
                 "-i", f"{item}",
                 "-vf", f"crop=iw:{GI_HEIGHT}:0:ih-{GI_HEIGHT},scale={args.width}:{args.height}",
                 "-quality", f"{args.quality}",
@@ -224,11 +244,11 @@ for index, item in enumerate(TARGET_LIST):
                 "-y"
             ]
             if args.lossless:
-                FFMPEG_ARGS.extend(["-lossless", "1"])
-            FFMPEG_ARGS.extend(["-f", "webp", f"{OUTPUT_FULL}\\{FILENAME}.webp"])
+                ffmpeg_args.extend(["-lossless", "1"])
+            ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
         elif args.giType == 2:
             GI_HEIGHT = 300
-            FFMPEG_ARGS = [
+            ffmpeg_args = [
                 "-i", f"{item}",
                 "-vf", f"crop=iw:{GI_HEIGHT}:0:ih-{GI_HEIGHT},scale={args.width}:{args.height}",
                 "-quality", f"{args.quality}",
@@ -237,11 +257,11 @@ for index, item in enumerate(TARGET_LIST):
                 "-y"
             ]
             if args.lossless:
-                FFMPEG_ARGS.extend(["-lossless", "1"])
-            FFMPEG_ARGS.extend(["-f", "webp", f"{OUTPUT_FULL}\\{FILENAME}.webp"])
+                ffmpeg_args.extend(["-lossless", "1"])
+            ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
         elif args.giType == 3:
             GI_HEIGHT = 400
-            FFMPEG_ARGS = [
+            ffmpeg_args = [
                 "-i", f"{item}",
                 "-vf", f"crop=iw:{GI_HEIGHT}:0:ih-{GI_HEIGHT},scale={args.width}:{args.height}",
                 "-quality", f"{args.quality}",
@@ -250,12 +270,13 @@ for index, item in enumerate(TARGET_LIST):
                 "-y"
             ]
             if args.lossless:
-                FFMPEG_ARGS.extend(["-lossless", "1"])
-            FFMPEG_ARGS.extend(["-f", "webp", f"{OUTPUT_FULL}\\{FILENAME}.webp"])
+                ffmpeg_args.extend(["-lossless", "1"])
+            ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
         # Run FFmpeg
-        start_ffmpeg(FFMPEG_ARGS)
+        progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... [GI Type: {args.giType}]")
+        start_ffmpeg(ffmpeg_args)
     elif args.subcmd == "mp3":
-        FFMPEG_ARGS = [
+        ffmpeg_args = [
             "-i", f"{item}",
             "-codec:a", "libmp3lame",
             "-b:a", f"{args.bitrate}k",
@@ -263,12 +284,14 @@ for index, item in enumerate(TARGET_LIST):
             "-ar", f"{args.samplerate}",
             "-y",
             "-f", "mp3",
-            f"{OUTPUT_FULL}\\{FILENAME}.mp3"
+            f"{output_dir_str}\\{item_name_only}.mp3"
         ]
         # Run FFmpeg
-        start_ffmpeg(FFMPEG_ARGS)
+        progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... [MP3]")
+        start_ffmpeg(ffmpeg_args)
     elif args.subcmd == "webm":
-        FFMPEG_ARGS = [
+        # Commonly used arguments
+        ffmpeg_args = [
             "-i", f"{item}",
             "-c:v", "libvpx-vp9",
             "-b:v", "0", "-crf", f"{args.quality}",
@@ -277,41 +300,42 @@ for index, item in enumerate(TARGET_LIST):
         ]
         if args.twoPass:
             # Create first pass arguments
-            FFMPEG_ARGS_1 = FFMPEG_ARGS.extend([
+            ffmpeg_args_1: List[str, ...] = ffmpeg_args
+            ffmpeg_args_1.extend([
                 "-pass", "1",
-                "-passlogfile", f"{FILENAME}",
+                "-passlogfile", f"{item_name_only}",
                 "-an", "-f", "null",
                 "-y",
                 "nul"
             ])
-            # Modify progress bar
-            progressbar(COUNT, len(TARGET_LIST), f"Processing {item} ... (1/2)")
             # Run FFmpeg
-            start_ffmpeg(FFMPEG_ARGS_1)
+            progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... (1/2) [WEBM 2-Pass]")
+            start_ffmpeg(ffmpeg_args_1)
             # Create second pass arguments
-            FFMPEG_ARGS_2 = FFMPEG_ARGS.extend([
+            ffmpeg_args_2: List[str, ...] = ffmpeg_args
+            ffmpeg_args_2.extend([
                 "-c:a", "libopus",
                 "-pass", "2",
-                "-passlogfile", f"{FILENAME}",
+                "-passlogfile", f"{item_name_only}",
                 "-y",
                 "-f", "webm",
-                f"{OUTPUT_FULL}\\{FILENAME}.webm"
+                f"{output_dir_str}\\{item_name_only}.webm"
             ])
-            # Modify progress bar
-            progressbar(COUNT, len(TARGET_LIST), f"Processing {item} ... (2/2)")
             # Run FFmpeg
-            start_ffmpeg(FFMPEG_ARGS_2)
+            progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... (2/2) [WEBM 2-Pass]")
+            start_ffmpeg(ffmpeg_args_2)
         else:
-            FFMPEG_ARGS.extend([
+            ffmpeg_args.extend([
                 "-c:a", "libopus",
                 "-y",
                 "-f", "webm",
-                f"{OUTPUT_FULL}\\{FILENAME}.webm"
+                f"{output_dir_str}\\{item_name_only}.webm"
             ])
             # Run FFmpeg
-            start_ffmpeg(FFMPEG_ARGS)
+            progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... [WEBM 1-Pass]")
+            start_ffmpeg(ffmpeg_args)
     elif args.subcmd == "webp":
-        FFMPEG_ARGS = [
+        ffmpeg_args = [
             "-i", f"{item}",
             "-quality", f"{args.quality}",
             "-compression_level", f"{args.compression}",
@@ -319,12 +343,13 @@ for index, item in enumerate(TARGET_LIST):
             "-y"
         ]
         if args.lossless:
-            FFMPEG_ARGS.extend(["-lossless", "1"])
-        FFMPEG_ARGS.extend(["-f", "webp", f"{OUTPUT_FULL}\\{FILENAME}.webp"])
+            ffmpeg_args.extend(["-lossless", "1"])
+        ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
         # Run FFmpeg
-        start_ffmpeg(FFMPEG_ARGS)
+        progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... [WEBP]")
+        start_ffmpeg(ffmpeg_args)
     elif args.subcmd == "webpa":
-        FFMPEG_ARGS = [
+        ffmpeg_args = [
             "-i", f"{item}",
             "-c:v", "libwebp",
             "-vf", f"scale={args.width}:{args.height},fps=fps={args.fps}",
@@ -336,9 +361,10 @@ for index, item in enumerate(TARGET_LIST):
             "-y"
         ]
         if args.lossless:
-            FFMPEG_ARGS.extend(["-lossless", "1"])
-        FFMPEG_ARGS.extend(["-f", "webp", f"{OUTPUT_FULL}\\{FILENAME}.webp"])
+            ffmpeg_args.extend(["-lossless", "1"])
+        ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
         # Run FFmpeg
-        start_ffmpeg(FFMPEG_ARGS)
+        progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... [WEBPA]")
+        start_ffmpeg(ffmpeg_args)
 
 print("Job Done")
