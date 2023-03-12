@@ -2,8 +2,8 @@ import argparse
 import subprocess
 import sys
 from os import getcwd
-from typing import List, Tuple
 from pathlib import Path
+from typing import List, Tuple
 
 subprocess.run("color", shell=True, capture_output=False, check=False)  # Hack: Enable ANSI/VT100 on Command Prompt
 
@@ -114,7 +114,7 @@ def create_output_dir(target: Path, output_name: str) -> Path:
     return output_dir
 
 
-def get_file_list(subcmd: str, target: Path) -> Tuple:
+def get_file_list(subcmd: str, target: Path) -> Tuple[str]:
     file_list = []
     if target.is_dir():
         # target is directory
@@ -164,7 +164,7 @@ def get_output_dir_name(argument: argparse.Namespace) -> str:
 def progressbar(now: int, total: int, prefix: str = "", size: int = 80, out=sys.stdout):
     x = int(size * now / total)
     print(prefix)
-    print(f"[{'█' * x}{('.' * (size - x))}] {now}/{total}", end='\r', file=out, flush=True)
+    print(f"[{'█' * x}{('.' * (size - x))}] {now}/{total}", end="\r", file=out, flush=True)
     print("\n", flush=True, file=out)
     # Must be used in this way: No one-line, no without 'ends='
     print("\033[1A", end="\x1b[2K", file=out)
@@ -175,6 +175,7 @@ def progressbar(now: int, total: int, prefix: str = "", size: int = 80, out=sys.
 def start_ffmpeg(args_list: List[str]):
     execution = [FFMPEG_PATH] + args_list
     subprocess.run(execution, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 
 #######################################################################################################################
 # Start of the script
@@ -219,56 +220,28 @@ for index, item in enumerate(target_list):
     # For beautifying Progress bar
     item_fullname: str = Path(item).name
     # Empty variables because IDE nags about them
-    ffmpeg_args: List[str, ...] = []
+    ffmpeg_args: List[str] = []
     if args.subcmd == "gi":
         if args.giType == 0:
-            ffmpeg_args = [
-                "-i", f"{item}",
-                "-vf", f"scale={args.width}:{args.height}",
-                "-quality", f"{args.quality}",
-                "-compression_level", "6",  # Always compress at highest
-                "-preset", f"{args.preset}",
-                "-y"
-            ]
+            ffmpeg_args = ["-i", f"{item}", "-vf", f"scale={args.width}:{args.height}", "-quality", f"{args.quality}", "-compression_level", "6", "-preset", f"{args.preset}", "-y"]  # Always compress at highest
             if args.lossless:
                 ffmpeg_args.extend(["-lossless", "1"])
             ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
         elif args.giType == 1:
             GI_HEIGHT = 240
-            ffmpeg_args = [
-                "-i", f"{item}",
-                "-vf", f"crop=iw:{GI_HEIGHT}:0:ih-{GI_HEIGHT},scale={args.width}:{args.height}",
-                "-quality", f"{args.quality}",
-                "-compression_level", "6",  # Always compress at highest
-                "-preset", f"{args.preset}",
-                "-y"
-            ]
+            ffmpeg_args = ["-i", f"{item}", "-vf", f"crop=iw:{GI_HEIGHT}:0:ih-{GI_HEIGHT},scale={args.width}:{args.height}", "-quality", f"{args.quality}", "-compression_level", "6", "-preset", f"{args.preset}", "-y"]  # Always compress at highest
             if args.lossless:
                 ffmpeg_args.extend(["-lossless", "1"])
             ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
         elif args.giType == 2:
             GI_HEIGHT = 300
-            ffmpeg_args = [
-                "-i", f"{item}",
-                "-vf", f"crop=iw:{GI_HEIGHT}:0:ih-{GI_HEIGHT},scale={args.width}:{args.height}",
-                "-quality", f"{args.quality}",
-                "-compression_level", "6",  # Always compress at highest
-                "-preset", f"{args.preset}",
-                "-y"
-            ]
+            ffmpeg_args = ["-i", f"{item}", "-vf", f"crop=iw:{GI_HEIGHT}:0:ih-{GI_HEIGHT},scale={args.width}:{args.height}", "-quality", f"{args.quality}", "-compression_level", "6", "-preset", f"{args.preset}", "-y"]  # Always compress at highest
             if args.lossless:
                 ffmpeg_args.extend(["-lossless", "1"])
             ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
         elif args.giType == 3:
             GI_HEIGHT = 400
-            ffmpeg_args = [
-                "-i", f"{item}",
-                "-vf", f"crop=iw:{GI_HEIGHT}:0:ih-{GI_HEIGHT},scale={args.width}:{args.height}",
-                "-quality", f"{args.quality}",
-                "-compression_level", "6",  # Always compress at highest
-                "-preset", f"{args.preset}",
-                "-y"
-            ]
+            ffmpeg_args = ["-i", f"{item}", "-vf", f"crop=iw:{GI_HEIGHT}:0:ih-{GI_HEIGHT},scale={args.width}:{args.height}", "-quality", f"{args.quality}", "-compression_level", "6", "-preset", f"{args.preset}", "-y"]  # Always compress at highest
             if args.lossless:
                 ffmpeg_args.extend(["-lossless", "1"])
             ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
@@ -276,72 +249,33 @@ for index, item in enumerate(target_list):
         progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... [GI Type: {args.giType}]")
         start_ffmpeg(ffmpeg_args)
     elif args.subcmd == "mp3":
-        ffmpeg_args = [
-            "-i", f"{item}",
-            "-codec:a", "libmp3lame",
-            "-b:a", f"{args.bitrate}k",
-            "-compression_level", "0",  # Always use best quality
-            "-ar", f"{args.samplerate}",
-            "-y",
-            "-f", "mp3",
-            f"{output_dir_str}\\{item_name_only}.mp3"
-        ]
+        ffmpeg_args = ["-i", f"{item}", "-codec:a", "libmp3lame", "-b:a", f"{args.bitrate}k", "-compression_level", "0", "-ar", f"{args.samplerate}", "-y", "-f", "mp3", f"{output_dir_str}\\{item_name_only}.mp3"]  # Always use best quality
         # Run FFmpeg
         progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... [MP3]")
         start_ffmpeg(ffmpeg_args)
     elif args.subcmd == "webm":
         # Commonly used arguments
-        ffmpeg_args = [
-            "-i", f"{item}",
-            "-c:v", "libvpx-vp9",
-            "-b:v", "0", "-crf", f"{args.quality}",
-            "-row-mt", "1",
-            "-y"
-        ]
+        ffmpeg_args = ["-i", f"{item}", "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", f"{args.quality}", "-row-mt", "1", "-y"]
         if args.twoPass:
             # Create first pass arguments
-            ffmpeg_args_1: List[str, ...] = ffmpeg_args
-            ffmpeg_args_1.extend([
-                "-pass", "1",
-                "-passlogfile", f"{item_name_only}",
-                "-an", "-f", "null",
-                "-y",
-                "nul"
-            ])
+            ffmpeg_args_1: List[str] = ffmpeg_args
+            ffmpeg_args_1.extend(["-pass", "1", "-passlogfile", f"{item_name_only}", "-an", "-f", "null", "-y", "nul"])
             # Run FFmpeg
             progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... (1/2) [WEBM 2-Pass]")
             start_ffmpeg(ffmpeg_args_1)
             # Create second pass arguments
-            ffmpeg_args_2: List[str, ...] = ffmpeg_args
-            ffmpeg_args_2.extend([
-                "-c:a", "libopus",
-                "-pass", "2",
-                "-passlogfile", f"{item_name_only}",
-                "-y",
-                "-f", "webm",
-                f"{output_dir_str}\\{item_name_only}.webm"
-            ])
+            ffmpeg_args_2: List[str] = ffmpeg_args
+            ffmpeg_args_2.extend(["-c:a", "libopus", "-pass", "2", "-passlogfile", f"{item_name_only}", "-y", "-f", "webm", f"{output_dir_str}\\{item_name_only}.webm"])
             # Run FFmpeg
             progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... (2/2) [WEBM 2-Pass]")
             start_ffmpeg(ffmpeg_args_2)
         else:
-            ffmpeg_args.extend([
-                "-c:a", "libopus",
-                "-y",
-                "-f", "webm",
-                f"{output_dir_str}\\{item_name_only}.webm"
-            ])
+            ffmpeg_args.extend(["-c:a", "libopus", "-y", "-f", "webm", f"{output_dir_str}\\{item_name_only}.webm"])
             # Run FFmpeg
             progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... [WEBM 1-Pass]")
             start_ffmpeg(ffmpeg_args)
     elif args.subcmd == "webp":
-        ffmpeg_args = [
-            "-i", f"{item}",
-            "-quality", f"{args.quality}",
-            "-compression_level", f"{args.compression}",
-            "-preset", f"{args.preset}",
-            "-y"
-        ]
+        ffmpeg_args = ["-i", f"{item}", "-quality", f"{args.quality}", "-compression_level", f"{args.compression}", "-preset", f"{args.preset}", "-y"]
         if args.lossless:
             ffmpeg_args.extend(["-lossless", "1"])
         ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])
@@ -349,17 +283,7 @@ for index, item in enumerate(target_list):
         progressbar(count, len(target_list), f"Processing {output_dirname}\\{item_fullname}... [WEBP]")
         start_ffmpeg(ffmpeg_args)
     elif args.subcmd == "webpa":
-        ffmpeg_args = [
-            "-i", f"{item}",
-            "-c:v", "libwebp",
-            "-vf", f"scale={args.width}:{args.height},fps=fps={args.fps}",
-            "-quality", f"{args.quality}",
-            "-compression_level", f"{args.compression}",
-            "-preset", f"{args.preset}",
-            "-an",
-            "-vsync", "0",
-            "-y"
-        ]
+        ffmpeg_args = ["-i", f"{item}", "-c:v", "libwebp", "-vf", f"scale={args.width}:{args.height},fps=fps={args.fps}", "-quality", f"{args.quality}", "-compression_level", f"{args.compression}", "-preset", f"{args.preset}", "-an", "-vsync", "0", "-y"]
         if args.lossless:
             ffmpeg_args.extend(["-lossless", "1"])
         ffmpeg_args.extend(["-f", "webp", f"{output_dir_str}\\{item_name_only}.webp"])

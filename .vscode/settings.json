@@ -1,0 +1,10 @@
+{
+  "editor.formatOnSave": true,
+  "python.formatting.blackArgs": ["--line-length=999"],
+  "python.formatting.provider": "black",
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.lintOnSave": true,
+  "python.linting.pylintEnabled": false,
+  "flake8.args": ["--rcfile=\".vscode\\.flake8\""]
+}
