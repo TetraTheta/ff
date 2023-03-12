@@ -26,6 +26,7 @@ HELP_GI_TYPE = "Type of screenshot truncation. Truncation is done before image r
 HELP_MP3_BITRATE = "Bitrate of the output MP3 audio.\nDefault: '%(default)s' (kbps)"
 HELP_MP3_SAMPLE = "Samplerate of the output MP3 audio.\nDefault: '%(default)s'"
 HELP_TARGET = "File or directory to process.\nDefault '%(default)s' (Current directory)"
+HELP_VERBOSE = "Print verbose message"
 HELP_WEBM_1_PASS = "Convert with 1-pass conversion"
 HELP_WEBM_2_PASS = "Convert with 2-pass conversion"
 HELP_WEBM_FPS = "FPS of the output WebM video.\nIf omitted, it will follow the source video's FPS."
@@ -55,11 +56,13 @@ parser_gi.add_argument("--preset", dest="preset", type=str, choices=WEBP_PRESETS
 parser_gi.add_argument("--quality", dest="quality", type=int, choices=range(1, 101), metavar="<1..100>", help=HELP_WEBP_QUALITY, default=80)
 parser_gi.add_argument("--type", dest="giType", type=int, choices=range(0, 4), metavar="<0..3>", help=HELP_GI_TYPE, default=0)
 parser_gi.add_argument("--width", dest="width", type=int, choices=range(-1, 10000), metavar="<-1..9999>", help=HELP_WEBP_WIDTH, default=1280)
+parser_gi.add_argument("--verbose", "-v", dest="verbose", action="store_true", help=HELP_VERBOSE)
 parser_gi.add_argument("target", metavar="<filename|directory>", help=HELP_TARGET, default=getcwd(), nargs="?")
 # Subcommand: mp3 - MP3
 parser_mp3 = subparser.add_parser("mp3", formatter_class=argparse.RawTextHelpFormatter, description=DESC_MP3)
 parser_mp3.add_argument("--bitrate", dest="bitrate", type=int, choices=range(1, 321), metavar="<1..320>", help=HELP_MP3_BITRATE, default=320)
 parser_mp3.add_argument("--samplerate", dest="samplerate", type=int, choices=range(0, 48001), metavar="<0..48000>", help=HELP_MP3_SAMPLE, default=48000)
+parser_mp3.add_argument("--verbose", "-v", dest="verbose", action="store_true", help=HELP_VERBOSE)
 parser_mp3.add_argument("target", metavar="<filename|directory>", help=HELP_TARGET, default=getcwd(), nargs="?")
 # Subcommand: webm - WebM
 parser_webm = subparser.add_parser("webm", formatter_class=argparse.RawTextHelpFormatter, description=DESC_WEBM)
@@ -69,6 +72,7 @@ parser_webm.add_argument("--quality", dest="quality", type=int, choices=range(15
 parser_webm.add_argument("--single-pass", "--no-two-pass", dest="twoPass", action="store_false", help=HELP_WEBM_1_PASS)
 parser_webm.add_argument("--two-pass", dest="twoPass", action="store_true", help=HELP_WEBM_2_PASS, default=True)
 parser_webm.add_argument("--width", dest="width", type=int, choices=range(-1, 10000), metavar="<-1..9999>", help=HELP_WEBM_WIDTH, default=1280)
+parser_webm.add_argument("--verbose", "-v", dest="verbose", action="store_true", help=HELP_VERBOSE)
 parser_webm.add_argument("target", metavar="<filename|directory>", help=HELP_TARGET, default=getcwd(), nargs="?")
 # Subcommand: webp - WebP
 parser_webp = subparser.add_parser("webp", formatter_class=argparse.RawTextHelpFormatter, description=DESC_WEBP)
@@ -79,6 +83,7 @@ parser_webp.add_argument("--lossy", dest="lossless", action="store_false", help=
 parser_webp.add_argument("--preset", dest="preset", type=str, choices=WEBP_PRESETS, help=HELP_WEBP_PRESET, default="picture")
 parser_webp.add_argument("--quality", dest="quality", type=int, choices=range(1, 101), metavar="<1..100>", help=HELP_WEBP_QUALITY, default=80)
 parser_webp.add_argument("--width", dest="width", type=int, choices=range(-1, 10000), metavar="<-1..9999>", help=HELP_WEBP_WIDTH, default=-1)
+parser_webp.add_argument("--verbose", "-v", dest="verbose", action="store_true", help=HELP_VERBOSE)
 parser_webp.add_argument("target", metavar="<filename|directory>", help=HELP_TARGET, default=getcwd(), nargs="?")
 # Subcommand: webpa - WebP Animated
 parser_webpa = subparser.add_parser("webpa", formatter_class=argparse.RawTextHelpFormatter, description=DESC_WEBPA)
@@ -92,6 +97,7 @@ parser_webpa.add_argument("--no-loop", dest="loop", action="store_false", help=H
 parser_webpa.add_argument("--preset", dest="preset", type=str, choices=WEBP_PRESETS, help=HELP_WEBP_PRESET, default="picture")
 parser_webpa.add_argument("--quality", dest="quality", type=int, choices=range(1, 101), metavar="<1..100>", help=HELP_WEBP_QUALITY, default=80)
 parser_webpa.add_argument("--width", dest="width", type=int, choices=range(-1, 10000), metavar="<-1..9999>", help=HELP_WEBP_WIDTH, default=-1)
+parser_webpa.add_argument("--verbose", "-v", dest="verbose", action="store_true", help=HELP_VERBOSE)
 parser_webpa.add_argument("target", metavar="<filename|directory>", help=HELP_TARGET, default=getcwd(), nargs="?")
 
 
@@ -111,7 +117,7 @@ def create_output_dir(target: Path, output_name: str) -> Path:
 
     output_directory = output_parent / output_name
     output_directory.mkdir(exist_ok=True)
-    return output_dir
+    return output_directory
 
 
 def get_file_list(subcmd: str, target: Path) -> Tuple[str]:
@@ -161,19 +167,26 @@ def get_output_dir_name(argument: argparse.Namespace) -> str:
     return "output" + suffix
 
 
+def print_verbose(message: str):
+    if args.verbose:
+        print(f"VERBOSE: {message}")
+
+
 def progressbar(now: int, total: int, prefix: str = "", size: int = 80, out=sys.stdout):
     x = int(size * now / total)
     print(prefix)
     print(f"[{'█' * x}{('.' * (size - x))}] {now}/{total}", end="\r", file=out, flush=True)
     print("\n", flush=True, file=out)
-    # Must be used in this way: No one-line, no without 'ends='
-    print("\033[1A", end="\x1b[2K", file=out)
-    print("\033[1A", end="\x1b[2K", file=out)
-    print("\033[1A", end="\x1b[2K", file=out)
+    if not args.verbose:
+        # Must be used in this way: No one-line, no without 'ends='
+        print("\033[1A", end="\x1b[2K", file=out)
+        print("\033[1A", end="\x1b[2K", file=out)
+        print("\033[1A", end="\x1b[2K", file=out)
 
 
 def start_ffmpeg(args_list: List[str]):
     execution = [FFMPEG_PATH] + args_list
+    print_verbose(execution)
     subprocess.run(execution, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
